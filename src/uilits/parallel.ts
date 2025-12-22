@@ -55,6 +55,13 @@ export const slicechunck =(chuncklist:Blob,size:number,indexchunck:number)=>{
             list
            }
 }
+/** 
+* @param content 为Blob
+* @param size 为分片大小
+* @param type 为文件类型
+* @param filenme 为文件名
+* @return 返回解析后的内容是一个string[]
+*/
 export const parallel =async(content:Blob,size:number,type:string,filenme:string):Promise<any>=>{  //对于单个文件进行操作
     try{
          const lru =LRU.getInstance()
@@ -65,7 +72,7 @@ export const parallel =async(content:Blob,size:number,type:string,filenme:string
             const chuncksize:number =1024*size
             const chuncklist = []
             let index =0
-            let results =''
+            let results:string[] = []
         while(index<content.size){
           /* const chunck =content.slice(index,index+chuncksize)
            index+=chuncksize
@@ -73,8 +80,8 @@ export const parallel =async(content:Blob,size:number,type:string,filenme:string
            */
           const {list,indexchunck} =slicechunck(content,chuncksize,index)
           index =indexchunck
-          const res =await getchunck(list,type)
-          results=results+res
+          const res =await getchunck(list,type)  //这步是放在work里面解析文件内容
+          results.push(...res)
         }
         /*
         之后在这里将获取的文件数据lru缓存
@@ -93,18 +100,27 @@ export const parallel =async(content:Blob,size:number,type:string,filenme:string
         return ''
     }
 }
+/** 
+ * @param chunck 为Blob
+ * @param type 为文件类型
+ * @return 返回解析后的内容是一个string[]
+*/
 const promise =async(chunck:Blob|undefined,type:string)=>{
     const factory =parserfactory.getinstance()
     if(chunck){
-        const data = await chunck.text()   // 之后通过判断文件类型去解析
-        const parse = await factory.Getparse(type) // 获取对应的解析器
+        const parser = await factory.Getparse('excel') // 获取对应的解析器
+        if(parser){
+           const data =await parser.parse(chunck)
+           return data
+        }
+
     }
     return ''
 }
 const getchunck =async(list:Blob[],type:string)=>{
     try{
         let chuncklist =[]
-        let result= ''
+        let result:string[] = []
         for(let index in list){
            try{
              const chunck = promise(list[index],type)
@@ -117,7 +133,7 @@ const getchunck =async(list:Blob[],type:string)=>{
         const data =await Promise.allSettled(chuncklist)
         data.forEach((item)=>{
            if(item.status==='fulfilled'){
-             result=result+item.value
+              result.push(...item.value)
            }
             return ''
         })

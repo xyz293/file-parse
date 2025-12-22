@@ -16,7 +16,7 @@ export class Baseparse<T=any> implements Parse<T>{
    async parse(content: string ,key:string){
        try{
              
-      
+         return null
             
           //一会会使用工厂模式去写解析过程
        }

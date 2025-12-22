@@ -1,26 +1,35 @@
+
 class webworkPool{
-    private workerList: Worker[] = []; //为空闲的worker队列
-    private taskQueue: ((worker: Worker) => void)[] = [];  //正在执行任务的队列
+    private workerList :Worker[] = [] //为空闲的worker队列
     private maxWorkerNum: number
     private  script: string
-    private static instance: webworkPool
     constructor(maxcount:number,script:string){
         this.maxWorkerNum = maxcount
         this.script = script
-        this.createWorker()
+        this.init()
     }
-    static getinstance(maxcount:number,script:string){  
-        if(!webworkPool.instance){
-            webworkPool.instance = new webworkPool(maxcount,script)
-        }
-        return webworkPool.instance
-    }
-    private createWorker():Worker[] {
-         for(let i=0;i<this.maxWorkerNum;i++){
-            const worker = new Worker(this.script)  // 无论是不是在一个文件夹，创建的work都是不一样的
+    private init(){
+        for(let i=0;i<this.maxWorkerNum;i++){  // 无论是不是在一个文件夹，创建的work都是不一样的
+            const worker = new Worker(this.script)
             this.workerList.push(worker)
-         }
-         return this.workerList
+        }
+    }
+    public postTask(data:any[]|any){//这里的type是指，上传文件解析，还是axios请求
+        if(this.workerList.length>0){
+            const worker = this.workerList.shift()
+            if(worker){
+                worker.postMessage({data})
+                return worker
+            }
+            return worker
+        }
+
+    }
+    public destroy(){  //在任务完成后调用，销毁所有worker销毁其生命周期
+        this.workerList.forEach((worker)=>{
+            worker.terminate()
+        })
+        this.workerList = []
     }
 }
 
