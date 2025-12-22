@@ -41,6 +41,9 @@ export const parallelfile =async(list:parse[],size:number,type:string,filename:s
 }
 
 export const slicechunck =(chuncklist:Blob,size:number,indexchunck:number)=>{
+         /*
+         对文件进行切片 基本思想是将文件分成多个分片，每个分片的大小为size
+         */
             const list =[]
            for(let i =0;i<3;i++){
                if(indexchunck<chuncklist.size){
@@ -118,6 +121,10 @@ const promise =async(chunck:Blob|undefined,type:string)=>{
     return ''
 }
 const getchunck =async(list:Blob[],type:string)=>{
+  /*
+  进行work通信，在worker里面解析文件内容，之后将解析后的内容返回
+  将对多个返回blob[]，使用worker进行并发解析
+  */
     try{
         let chuncklist =[]
         let result:string[] = []
@@ -130,7 +137,7 @@ const getchunck =async(list:Blob[],type:string)=>{
             chuncklist.push(chunck)
            }
         }
-        const data =await Promise.allSettled(chuncklist)
+        const data =await Promise.allSettled(chuncklist) //之后在work里面不需要promise
         data.forEach((item)=>{
            if(item.status==='fulfilled'){
               result.push(...item.value)

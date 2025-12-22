@@ -24,3 +24,9 @@ export interface Parse<T=any>{
     validate(content: Blob): Promise<string>;//转化blob  是前端进行文件解析
     parse(content:string,key:string):Promise<parseResult<T>|null>
 }
+
+
+export interface Basework{
+    work:Worker
+    isActive:boolean
+}
