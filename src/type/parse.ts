@@ -30,3 +30,11 @@ export interface Basework{
     work:Worker
     isActive:boolean
 }
+
+
+export interface Task{
+    data:any,
+    type:string,
+    resolve:(data:any)=>void,
+    reject:()=>void,
+}

@@ -1,7 +1,8 @@
 import type { Basework } from '../type/parse.ts'
+import type {Task} from '../type/parse.ts'
 export class webworkPool{
   private workerList :Basework[] = [] //为空闲的worker队列
-  private taskQueue :any[] = [] //为等待中的任务队列
+  private taskQueue :Task[] = [] //为等待中的任务队列
   private maxWorkerCount : number
   private path: string
   constructor(maxWorkerCount : number,path: string){
@@ -40,22 +41,22 @@ export class webworkPool{
               item.isActive = false
               const task = this.getTask()
             if(task){ // 返回的是一个对象
-              this.run(task.data,task.type)
+              this.run(task.data,task.type).then(task.resolve).catch(task.reject)
             }
-            resolve(e.data)
+              resolve(e.data)
              }
              item.work.addEventListener('message', onmessage)
              break
          }
      }
          if(!hasAssigned){
-            this.assignTaskToWorker({data,type})
+            this.assignTaskToWorker({data,type,resolve,reject})
             hasAssigned = true
          }
       })
   }
-  private assignTaskToWorker(data: any){ 
-    this.taskQueue.push(data)
+  private assignTaskToWorker(task: Task){ 
+    this.taskQueue.push(task)
 }
 }
 export default webworkPool
