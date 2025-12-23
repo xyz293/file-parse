@@ -1,5 +1,6 @@
 import type {parse,parseresult} from '../type/result.ts'
 import {parserfactory} from '../core/parserfactory.ts'
+import {webworkPool} from './webwork.ts'
 import {LRU} from './cash.ts'
 /*
 这里是可以将多个文件进行解析内容的函数，
@@ -108,17 +109,17 @@ export const parallel =async(content:Blob,size:number,type:string,filenme:string
  * @param type 为文件类型
  * @return 返回解析后的内容是一个string[]
 */
-const promise =async(chunck:Blob|undefined,type:string)=>{
+export const promise =async(chunck:Blob|undefined,type:string)=>{
     const factory =parserfactory.getinstance()
     if(chunck){
-        const parser = await factory.Getparse('excel') // 获取对应的解析器
+        const parser = await factory.Getparse(type) // 获取对应的解析器
         if(parser){
-           const data =await parser.parse(chunck)
+           const data =await parser.parse(chunck)// 返回一个string[]的内容
            return data
         }
 
     }
-    return ''
+    return ['']
 }
 const getchunck =async(list:Blob[],type:string)=>{
   /*
@@ -126,12 +127,16 @@ const getchunck =async(list:Blob[],type:string)=>{
   将对多个返回blob[]，使用worker进行并发解析
   */
     try{
+      const workerpool = new webworkPool(4,'src/uilits/work.ts')
         let chuncklist =[]
         let result:string[] = []
         for(let index in list){
            try{
+             /*
              const chunck = promise(list[index],type)
              chuncklist.push(chunck)
+             */
+            workerpool.run(list[index],type)
            }catch{
             const chunck = promise(list[index],type)
             chuncklist.push(chunck)

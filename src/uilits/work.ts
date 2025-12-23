@@ -1,7 +1,5 @@
+import {promise} from './parallel.ts'
 self.onmessage = async(event) => {
-    const {data,type} = event.data
-    if(type==='axios'){
-        const res =await data
-        self.postMessage({data:res})
-    }
+   const res = await promise(event.data,event.type)
+   self.postMessage(res) // 返回一个string[]的内容
 }
