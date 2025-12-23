@@ -25,6 +25,7 @@ export class webworkPool{
      return this.taskQueue.shift()
   }
   public run(data: any,type:string){
+    let hasAssigned = false
       return new Promise((resolve, reject) => {
          for(let item of this.workerList){
          if(item.isActive===false){
@@ -33,19 +34,24 @@ export class webworkPool{
                type
              })
              item.isActive = true
-             item.work.onmessage = (e) => {
+             hasAssigned = true
+             const onmessage = (e:MessageEvent) => {
                 // 处理worker返回的消息
-            item.isActive = false
-            const task = this.getTask()
+              item.isActive = false
+              const task = this.getTask()
             if(task){ // 返回的是一个对象
               this.run(task.data,task.type)
             }
             resolve(e.data)
              }
+             item.work.addEventListener('message', onmessage)
              break
          }
      }
-     this.assignTaskToWorker({data,type})
+         if(!hasAssigned){
+            this.assignTaskToWorker({data,type})
+            hasAssigned = true
+         }
       })
   }
   private assignTaskToWorker(data: any){ 

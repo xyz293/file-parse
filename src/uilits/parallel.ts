@@ -68,7 +68,7 @@ export const slicechunck =(chuncklist:Blob,size:number,indexchunck:number)=>{
 */
 export const parallel =async(content:Blob,size:number,type:string,filenme:string):Promise<any>=>{  //对于单个文件进行操作
     try{
-         const lru =LRU.getInstance()
+         const lru =LRU.getInstance(4)
          if(lru.has(filenme)){
             return lru.get(filenme)
          }
@@ -130,18 +130,9 @@ const getchunck =async(list:Blob[],type:string)=>{
       const workerpool = new webworkPool(4,'src/uilits/work.ts')
         let chuncklist =[]
         let result:string[] = []
-        for(let index in list){
-           try{
-             /*
-             const chunck = promise(list[index],type)
-             chuncklist.push(chunck)
-             */
-            workerpool.run(list[index],type)
-           }catch{
-            const chunck = promise(list[index],type)
-            chuncklist.push(chunck)
-           }
-        }
+       chuncklist = list.map((item)=>{
+        return workerpool.run(item,type)
+       })
         const data =await Promise.allSettled(chuncklist) //之后在work里面不需要promise
         data.forEach((item)=>{
            if(item.status==='fulfilled'){
