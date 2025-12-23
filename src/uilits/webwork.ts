@@ -5,6 +5,13 @@ export class webworkPool{
   private taskQueue :Task[] = [] //为等待中的任务队列
   private maxWorkerCount : number
   private path: string
+  private static instanc : webworkPool
+  static getInstance(maxWorkerCount : number,path: string):webworkPool{
+    if(!webworkPool.instanc){
+      webworkPool.instanc =new webworkPool(maxWorkerCount,path)
+    }
+    return webworkPool.instanc
+  }
   constructor(maxWorkerCount : number,path: string){
     this.maxWorkerCount = maxWorkerCount
     this.path = path
@@ -45,7 +52,11 @@ export class webworkPool{
             }
               resolve(e.data)
              }
-             item.work.addEventListener('message', onmessage)
+             const err = (e:ErrorEvent) => {
+                reject('worker error')
+             }
+             item.work.addEventListener('message', onmessage,{once: true})
+             item.work.addEventListener('error', err)
              break
          }
      }

@@ -68,7 +68,7 @@ export const slicechunck =(chuncklist:Blob,size:number,indexchunck:number)=>{
 */
 export const parallel =async(content:Blob,size:number,type:string,filenme:string):Promise<any>=>{  //对于单个文件进行操作
     try{
-         const lru =LRU.getInstance(4)
+         const lru =LRU.getInstance()
          if(lru.has(filenme)){
             return lru.get(filenme)
          }
@@ -127,7 +127,7 @@ const getchunck =async(list:Blob[],type:string)=>{
   将对多个返回blob[]，使用worker进行并发解析
   */
     try{
-      const workerpool = new webworkPool(4,'src/uilits/work.ts')
+      const workerpool = webworkPool.getInstance(4,'src/uilits/work.ts')
         let chuncklist =[]
         let result:string[] = []
        chuncklist = list.map((item)=>{

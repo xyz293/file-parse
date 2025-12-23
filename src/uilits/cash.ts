@@ -2,10 +2,10 @@ import type {Basecash,Cashdata} from '../type/cash.ts'
 export  class LRU <T=any> implements Basecash<T> {
     private cash =new Map<string,Cashdata<T>>()
     private static instance:LRU
-    static getInstance(max:number):LRU<any>{   //这里是防止内存在同一块使用的缓存不变
+    static getInstance():LRU<any>{   //这里是防止内存在同一块使用的缓存不变
                                       //使用filename进行获取缓存
         if(!LRU.instance){
-            LRU.instance =new LRU(max)
+            LRU.instance =new LRU(8)
         }
         return LRU.instance
     }

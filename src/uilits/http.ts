@@ -1,5 +1,6 @@
 import axios from 'axios'
 import {LRU} from './cash.ts'
+//之后也通过axios获取的excle文件解析，这里需要使用worker进行解析
 /**
  * 这里是请求文件的函数
  * @param url  文件的url
