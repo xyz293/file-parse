@@ -17,14 +17,7 @@ export class webworkPool{
       isActive: false
     }
     worker.work.onmessage = (e) => {
-       // 处理worker返回的消息
-       worker.isActive = false
-       const task = this.getTask()
-       if(task){ // 返回的是一个对象
-        worker.work.postMessage(task)
-        worker.isActive = true
-       }
-
+       
     }
     return worker
   }
@@ -32,17 +25,28 @@ export class webworkPool{
      return this.taskQueue.shift()
   }
   public run(data: any,type:string){
-     for(let item of this.workerList){
+      return new Promise((resolve, reject) => {
+         for(let item of this.workerList){
          if(item.isActive===false){
              item.work.postMessage({
                data,
                type
              })
              item.isActive = true
+             item.work.onmessage = (e) => {
+                // 处理worker返回的消息
+            item.isActive = false
+            const task = this.getTask()
+            if(task){ // 返回的是一个对象
+              this.run(task.data,task.type)
+            }
+            resolve(e.data)
+             }
              break
          }
      }
      this.assignTaskToWorker({data,type})
+      })
   }
   private assignTaskToWorker(data: any){ 
     this.taskQueue.push(data)
