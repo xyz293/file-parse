@@ -131,7 +131,7 @@ const getchunck =async(list:Blob[],type:string)=>{
         let result:string[] = []
        chuncklist = list.map((item)=>{
         return workerpool.run(item,type)
-       })
+       })//只是返回一个promise数组
         const data =await Promise.allSettled(chuncklist) //之后在work里面不需要promise
         data.forEach((item)=>{
            if(item.status==='fulfilled'){
