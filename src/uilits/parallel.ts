@@ -19,8 +19,8 @@ export const parallelfile =async(list:parse[],size:number,type:string,filename:s
                  results:[]
               }
             }
-          for(let item of list){
-                if(item.data){
+           const res =await Promise.allSettled(list.map(async(item)=>{
+            if(item.data){
                 const filedata =await parallel(item.data,size,type,filename)
                   if(filedata){
                     success++
@@ -28,16 +28,16 @@ export const parallelfile =async(list:parse[],size:number,type:string,filename:s
                   else {
                     failed++
                   }
-                  results.push({
+                return  {
                     data:filedata,
-                    index:item.index
-                  })
+                    index:item.index  //返回的是文件的索引
+                  }
                 }
-            }
+           }))
             return {
                 success:success,
                 failed:failed,
-                results:results
+                results:res.filter(item=>item.status==='fulfilled').map(item=>item.value)
             }
 }
 
@@ -52,7 +52,6 @@ export const slicechunck =(chuncklist:Blob,size:number,indexchunck:number)=>{
                 indexchunck+=size
                 list.push(data)
                }
-               break
            }
            return {
             indexchunck,
