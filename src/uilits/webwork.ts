@@ -49,6 +49,7 @@ export class webworkPool{
               const task = this.getTask()
             if(task){ // 返回的是一个对象
               this.run(task.data,task.type).then(task.resolve).catch(task.reject)
+              //这里通过递归进行，将需要返回的promise的resolve进行传递之后会返回我需要的值
             }
               resolve(e.data)
              }
