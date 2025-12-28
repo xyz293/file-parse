@@ -36,5 +36,5 @@ export interface Task{
     data:any,
     type:string,
     resolve:(data:any)=>void,
-    reject:()=>void,
+    reject:(data:any)=>void,
 }
