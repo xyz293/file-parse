@@ -70,10 +70,6 @@ export class webworkPool{
         */
          for(let item of this.workerList){
          if(item.isActive===false){
-             item.work.postMessage({
-               data,
-               type
-             })
              hasAssigned = true
              this.assignTaskToWorkerDirectly(item,{data,type,resolve,reject})
              break
