@@ -41,23 +41,24 @@ export const parallelfile =async(list:parse[],size:number,type:string,filename:s
             }
 }
 
-export const slicechunck =(chuncklist:Blob,size:number,indexchunck:number)=>{
-         /*
-         对文件进行切片 基本思想是将文件分成多个分片，每个分片的大小为size
-         */
-            const list =[]
-           for(let i =0;i<3;i++){
-               if(indexchunck<chuncklist.size){
-                const data =chuncklist.slice(indexchunck,indexchunck+size)
-                indexchunck+=size
-                list.push(data)
-               }
-           }
-           return {
-            indexchunck,
-            list
-           }
-}
+export const sliceChunk = (blob: Blob, chunkSize: number, startIndex: number) => {
+  const chunks: Blob[] = [];
+  let currentIndex = startIndex;
+
+  // 核心修复：循环直到当前位置超过文件大小，而非固定 3 次
+  while (currentIndex < blob.size && chunks.length < 10) {
+    // Blob.slice(start, end)：end 不超过文件大小
+    const endIndex = Math.min(currentIndex + chunkSize, blob.size);
+    const chunk = blob.slice(currentIndex, endIndex);
+    chunks.push(chunk);
+    currentIndex = endIndex;
+  }
+
+  return {
+    chunkIndex: currentIndex, // 下一次分片的起始位置
+    chunks: chunks // 本次分片结果
+  };
+};
 /** 
 * @param content 为Blob
 * @param size 为分片大小
@@ -81,9 +82,9 @@ export const parallel =async(content:Blob,size:number,type:string,filenme:string
            index+=chuncksize
            chuncklist.push(chunck)
            */
-          const {list,indexchunck} =slicechunck(content,chuncksize,index)
-          index =indexchunck
-          const res =await getchunck(list,type)  //这步是放在work里面解析文件内容
+          const {chunks,chunkIndex} =sliceChunk(content,chuncksize,index)
+          index =chunkIndex
+          const res =await getchunck(chunks,type)  //这步是放在work里面解析文件内容
           results.push(...res)
         }
         /*
