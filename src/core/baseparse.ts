@@ -26,6 +26,164 @@ export class Baseparse<T=any> implements Parse<T>{
    }
 }
 /*
+import { ForwardedRef, forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { init, EChartsType } from 'echarts/core';
+import { EChartsOption } from 'echarts';
+import {
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent,
+  DataZoomComponent,
+  MarkLineComponent,
+  BrushComponent,
+  ToolboxComponent,
+  VisualMapComponent,
+} from 'echarts/components';
+import { LineChart, BarChart, PieChart, ScatterChart } from 'echarts/charts';
+import { CanvasRenderer } from 'echarts/renderers';
+import { DEFAULT_COLOR } from '@/config/color';
+import { LabelLayout } from 'echarts/features';
+
+// 按需注册
+import * as echarts from 'echarts/core';
+
+echarts.use([
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent,
+  DataZoomComponent,
+  MarkLineComponent,
+  ToolboxComponent,
+  BrushComponent,
+  LineChart,
+  BarChart,
+  CanvasRenderer,
+  PieChart,
+  LabelLayout,
+  ScatterChart,
+  VisualMapComponent,
+]);
+
+export interface EChartsRef {
+  getInstance: () => EChartsType | null
+  resize: () => void;
+  dataZoom: () => void;
+}
+
+// 定义组件 Props 类型
+export interface EChartsProps {
+  option: EChartsOption; // 使用显式导入的类型
+  style?: React.CSSProperties;
+  className?: string;
+  onEvents?: Record<string, (params: any) => void>;
+  legendColor?: string[];
+}
+
+export const ECharts = forwardRef<EChartsRef, EChartsProps>(
+  ({ option, style, className, onEvents, legendColor = DEFAULT_COLOR }, ref: ForwardedRef<EChartsRef>) => {
+    const chartRef = useRef<HTMLDivElement>(null);
+    const chartInstance = useRef<EChartsType | null>(null);
+    const currentEventsRef = useRef<Record<string, Function>>({});
+
+    useImperativeHandle(ref, () => ({
+      getInstance: () => chartInstance.current,
+      resize: () => {
+        chartInstance.current?.resize();
+      },
+      dataZoom: () => {
+        chartInstance.current?.dispatchAction({
+          type: 'takeGlobalCursor',
+          key: 'dataZoomSelect',
+          dataZoomSelectActive: true,
+        });
+        chartInstance.current?.off('restore').on('restore', function () {
+          // 1. 这里可以重新构建一个全新的 option
+          // 2. 或者直接重置数据缩放等状态
+          chartInstance.current?.setOption(option, { notMerge: true }); // 使用全新的配置对象
+          // 如果需要，也可以重置数据缩放状态
+          chartInstance.current?.dispatchAction({
+            type: 'takeGlobalCursor',
+            key: 'dataZoomSelect',
+            dataZoomSelectActive: true,
+          });
+        });
+      },
+    }));
+
+    // 初始化图表实例
+    useEffect(() => {
+      if (chartRef.current) {
+        chartInstance.current = init(chartRef.current);
+        const resizeHandler = () => chartInstance.current?.resize();
+        window.addEventListener('resize', resizeHandler);
+
+        return () => {
+          window.removeEventListener('resize', resizeHandler);
+          chartInstance.current?.dispose();
+          chartInstance.current = null;
+        };
+      }
+    }, []);
+
+    // 处理option更新
+    useEffect(() => {
+      if (chartInstance.current && option) {
+        const finalOption = {
+          color: legendColor,
+          ...option
+        };
+        // 避免不必要的重新渲染
+        chartInstance.current.setOption(finalOption, {
+          replaceMerge: ['series', 'xAxis', 'yAxis', 'grid'], // 仅替换必要部分
+
+        });
+      }
+    }, [option]);
+
+    // 处理事件更新
+    useEffect(() => {
+      if (!chartInstance.current) return;
+
+      // 解绑旧事件
+      Object.entries(currentEventsRef.current).forEach(([eventName, handler]) => {
+        chartInstance.current?.off(eventName, handler);
+      });
+
+      // 绑定新事件
+      if (onEvents) {
+        currentEventsRef.current = { ...onEvents };
+        Object.entries(onEvents).forEach(([eventName, handler]) => {
+          chartInstance.current?.on(eventName, handler);
+        });
+      } else {
+        currentEventsRef.current = {};
+      }
+
+      // 清理函数 - 确保卸载时解绑事件
+      return () => {
+        Object.entries(currentEventsRef.current).forEach(([eventName, handler]) => {
+          chartInstance.current?.off(eventName, handler);
+        });
+      };
+    }, [onEvents]);
+
+    return (
+      <div
+        ref={chartRef}
+        style={{
+          width: '100%',
+          height: '400px',
+          ...style,
+        }}
+        className={className}
+      ></div>
+    );
+  });
+
+
+
 import {Pagination, ConfigProvider} from 'antd';
 import zhCN from 'antd/lib/locale/zh_CN';
 import {Flex} from 'antd';
@@ -67,130 +225,4 @@ export const CommonPagination: React.FC<PaginationProps> = ({page, pageSize, tot
     </div>
   );
 }
-
-import {ConfigProvider, Flex, Spin, Splitter, Tree, TreeProps} from "antd";
-import {useRef} from "react";
-import styles from "./index.module.less";
-import openImg from "@/asset/opened.svg";
-import closeImg from "@/asset/closed.svg";
-import {DataNode} from 'antd/es/tree';
-import {TreeProps as AntTreeProps} from 'antd';
-
-export interface SplitterTreeProps {
-  treeData: DataNode[], // tree 源数据
-  rightContent: React.ReactNode | string | null, // 右侧内容
-  leftHeader?: React.ReactNode | null, // 左侧header
-  leftFooter?: React.ReactNode | null, // 左侧footer
-  treeTitleRender?: (nodeData: DataNode) => React.ReactNode; // tree 节点的title渲染
-  treeProps?: AntTreeProps; // tree 其他配置参数
-  treeCheckable?: boolean; // tree 是否可勾选
-  onTreeSelect?: TreeProps['onSelect']; // tree 节点被选中
-  onTreeClick?: (e: React.MouseEvent) => void; // tree 节点被点击
-  onTreeExpand?: TreeProps['onExpand']; // tree 节点展开
-  onTreeLoadData?: TreeProps['loadData']; // tree 节点加载数据
-  onTreeCheck?: TreeProps['onCheck']; // tree 节点被勾选
-  leftPanelProps?: {
-    defaultSize?: number | string;
-    min?: number | string;
-    max?: number | string;
-  }; // 左侧panel的配置（splitter的左侧宽度）
-  treeLoading?: boolean; // tree 加载状态
-  treeContainerStyle?: React.CSSProperties; // tree 容器样式
-  contentStyle?: React.CSSProperties; // 右侧内容样式（style）
-  contentClassName?: string; // 右侧内容样式（classname）
-}
-
-export const SplitterTree = (props: SplitterTreeProps) => {
-
-  const {
-    treeData, leftHeader, leftFooter, onTreeExpand, onTreeSelect, onTreeClick, treeTitleRender, treeProps,
-    treeCheckable, onTreeCheck, rightContent, treeContainerStyle, contentStyle, contentClassName, onTreeLoadData,
-    treeLoading = false,
-    leftPanelProps = {
-      defaultSize: 270,
-      min: "10%",
-      max: "70%"
-    }
-  } = props;
-
-  // 控制分割线显示和隐藏
-  const splitContainerRef = useRef<HTMLDivElement>(null);
-
-  const splitterMouseEvent = (e: React.MouseEvent) => {
-
-    if (splitContainerRef.current) {
-      const splitterBar = splitContainerRef.current?.querySelector('.ant-splitter-bar');
-      if (splitterBar) {
-        (splitterBar as HTMLElement).style.opacity = e.type === 'mouseenter' ? "1" : "0";
-      }
-    }
-  };
-
-  return <div className={styles.splitterTreeContainer} ref={splitContainerRef}>
-    <Splitter>
-      <Splitter.Panel defaultSize={leftPanelProps.defaultSize}
-                      min={leftPanelProps.min}
-                      max={leftPanelProps.max}>
-        <div className={styles.leftContainer}
-             onMouseEnter={splitterMouseEvent}
-             onMouseLeave={splitterMouseEvent}>
-          <Flex vertical flex={1}>
-            <div>
-              {leftHeader && <div>{leftHeader}</div>}
-              <Spin spinning={treeLoading}>
-                <div className={styles.treeContainer}
-                     style={{...treeContainerStyle}}
-                     id={"treeContainer"}>
-                  <ConfigProvider
-                    theme={{
-                      components: {
-                        Tree: {
-                          indentSize: 12,
-                          nodeSelectedBg: "rgba(64, 158, 255, 0.10)",
-                          titleHeight: 26
-                        },
-                      },
-                    }}
-                  >
-                    <Tree
-                      showIcon
-                      blockNode
-                      switcherIcon={(value) => {
-                        if (value.expanded) {
-                          return <img style={{paddingTop: 3}} src={openImg} alt={"close"}/>
-                        }
-                        return <img style={{paddingTop: 3}} src={closeImg} alt={"open"}/>
-                      }}
-                      treeData={treeData}
-                      titleRender={treeTitleRender}
-                      loadData={onTreeLoadData}
-                      checkable={treeCheckable}
-                      onCheck={onTreeCheck}
-                      onSelect={onTreeSelect}
-                      onClick={onTreeClick}
-                      onExpand={onTreeExpand}
-                      {...treeProps}
-                    />
-                  </ConfigProvider>
-                </div>
-              </Spin>
-            </div>
-
-            {leftFooter && <div className={styles.leftFooter}>{leftFooter}</div>}
-          </Flex>
-        </div>
-      </Splitter.Panel>
-
-      <Splitter.Panel>
-        <div className={`${styles.rightContainer} ${contentClassName}`}
-             style={{...contentStyle}}>
-          {rightContent}
-        </div>
-      </Splitter.Panel>
-    </Splitter>
-  </div>
-
-}
-
-
 */
