@@ -26,7 +26,7 @@ export  class LRU <T=any> implements Basecash<T> {
        }
     }
     get(key: string) {
-        if(this.cash.has(key)){
+        if(this.has(key)){
            const data =this.cash.get(key)
            if(data &&data.time>Date.now()){
                 this.delete(key)

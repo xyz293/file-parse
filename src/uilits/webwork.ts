@@ -32,37 +32,46 @@ export class webworkPool{
   private getTask(){
      return this.taskQueue.shift()
   }
+  private assignTaskToWorkerDirectly(item:Basework,task:Task){
+    /*
+    依旧是将将上一个resolve，传参下去，
+    之后在onmessage中进行判断，如果是success，就将resolve，传参下去，
+    如果是error，就将reject，传参下去，
+    */
+     item.isActive = true
+     item.work.postMessage({
+       data:task.data,
+       type:task.type
+     })
+     const onmessage = (e:MessageEvent) => {
+           item.isActive = false
+           if(e.data.message === 'success'){
+             task.resolve(e.data)
+           }
+           if(this.taskQueue.length > 0){
+             const nextTask = this.getTask()
+             if(nextTask){
+               this.assignTaskToWorkerDirectly(item,nextTask)
+             }
+           }
+     }
+     const err =()=>{
+      task.reject("worker error")
+     }
+      item.work.addEventListener('message', onmessage,{once: true})
+      item.work.addEventListener('error', err)
+
+  }
   public run(data: any,type:string){
-    let hasAssigned = false
       return new Promise((resolve, reject) => {
+        let hasAssigned = false
+        /*
+        将现有的worker进行分配任务，之后在onmessage中进行利用已经空闲的work进行分配任务
+        */
          for(let item of this.workerList){
          if(item.isActive===false){
-             item.work.postMessage({
-               data,
-               type
-             })
-             item.isActive = true
              hasAssigned = true
-             const onmessage = (e:MessageEvent) => {
-               if(e.data.message === 'success'){
-                  // 处理worker返回的消息
-                item.isActive = false
-                const task = this.getTask()
-                if(task){ // 返回的是一个对象
-                  this.run(task.data,task.type).then(task.resolve).catch(task.reject)
-                  //这里通过递归进行，将需要返回的promise的resolve进行传递之后会返回我需要的值
-                }
-                resolve(e.data)
-               }
-               else if(e.data.message === 'error'){
-                 reject(e.data.error)
-               }
-             }
-             const err = (e:ErrorEvent) => {
-                reject('worker error')
-             }
-             item.work.addEventListener('message', onmessage,{once: true})
-             item.work.addEventListener('error', err)
+             this.assignTaskToWorkerDirectly(item,{data,type,resolve,reject})
              break
          }
      }
