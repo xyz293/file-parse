@@ -136,7 +136,7 @@ const getchunck =async(list:Blob[],type:string)=>{
         const data =await Promise.allSettled(chuncklist) //之后在work里面不需要promise
         data.forEach((item)=>{
            if(item.status==='fulfilled'){
-              result.push(...item.value)
+              result.push(...item.value.res)
            }
             return ''
         })
