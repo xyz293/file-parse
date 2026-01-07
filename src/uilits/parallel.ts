@@ -93,7 +93,7 @@ export const parallel =async(content:Blob,size:number,type:string,filenme:string
         return ''
     }
 }
-const promise =async(chunck:Blob|undefined,type:string)=>{
+export const promise =async(chunck:Blob|undefined,type:string)=>{
     const factory =parserfactory.getinstance()
     if(chunck){
         const data = await chunck.text()   // 之后通过判断文件类型去解析
